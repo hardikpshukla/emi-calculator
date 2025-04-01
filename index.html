@@ -5,32 +5,112 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EMI Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    input, button, select { margin: 5px; padding: 5px; }
-    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-    th { background-color: #f2f2f2; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
+    }
+
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: right;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .summary {
+      background-color: #e9f5ff;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
-  <h2>EMI Calculator (with Broken Period Interest)</h2>
+  <div class="container">
+    <h2>EMI Calculator (with Broken Period Interest)</h2>
 
-  <label>Loan Amount (₹): <input type="number" id="loanAmount" /></label><br />
-  <label>Interest Type:
+    <label>Loan Amount (₹):</label>
+    <input type="number" id="loanAmount" />
+
+    <label>Interest Type:</label>
     <select id="interestType">
       <option value="reducing">Reducing</option>
       <option value="flat">Flat</option>
     </select>
-  </label><br />
-  <label>Annual Interest Rate (%): <input type="number" id="annualRate" step="0.01" /></label><br />
-  <label>Gross Tenure (months): <input type="number" id="grossTenure" /></label><br />
-  <label>Advance EMI (count): <input type="number" id="advanceEMI" /></label><br />
-  <label>Disbursal Date: <input type="date" id="disbursalDate" /></label><br />
-  <label>First EMI Date: <input type="date" id="firstEmiDate" /></label><br />
-  <button onclick="calculateEMI()">Calculate</button>
 
-  <div id="results"></div>
-  <div id="schedule"></div>
+    <label>Annual Interest Rate (%):</label>
+    <input type="number" id="annualRate" step="0.01" />
+
+    <label>Gross Tenure (months):</label>
+    <input type="number" id="grossTenure" />
+
+    <label>Advance EMI (count):</label>
+    <input type="number" id="advanceEMI" />
+
+    <label>Disbursal Date:</label>
+    <input type="date" id="disbursalDate" />
+
+    <label>First EMI Date:</label>
+    <input type="date" id="firstEmiDate" />
+
+    <button onclick="calculateEMI()">Calculate</button>
+
+    <div id="results" class="summary"></div>
+    <div id="schedule"></div>
+  </div>
 
   <script>
     function calculateEMI() {
@@ -57,18 +137,17 @@
       }
 
       const firstEMI = EMI + brokenInterest;
-
       const lastEmiDate = new Date(firstEmiDate);
       lastEmiDate.setMonth(lastEmiDate.getMonth() + netTenure - 1);
 
       let html = `
         <h3>Loan Summary</h3>
-        <p>Interest Type: ${interestType}</p>
-        <p>Net Tenure: ${netTenure} months</p>
-        <p>Broken Period Interest: ₹${brokenInterest.toFixed(2)}</p>
-        <p>Regular EMI: ₹${EMI.toFixed(2)}</p>
-        <p>First EMI (with Broken Interest): ₹${firstEMI.toFixed(2)}</p>
-        <p>Last EMI Date: ${lastEmiDate.toDateString()}</p>
+        <p><strong>Interest Type:</strong> ${interestType}</p>
+        <p><strong>Net Tenure:</strong> ${netTenure} months</p>
+        <p><strong>Broken Period Interest:</strong> ₹${brokenInterest.toFixed(2)}</p>
+        <p><strong>Regular EMI:</strong> ₹${EMI.toFixed(2)}</p>
+        <p><strong>First EMI (with Broken Interest):</strong> ₹${firstEMI.toFixed(2)}</p>
+        <p><strong>Last EMI Date:</strong> ${lastEmiDate.toDateString()}</p>
       `;
       document.getElementById("results").innerHTML = html;
 
