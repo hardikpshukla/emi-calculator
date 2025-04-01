@@ -133,7 +133,7 @@
     }
 
     function calculateEMI() {
-      const P_input = parseFloat(document.getElementById("loanAmount").value);
+      const grossPrincipal = parseFloat(document.getElementById("loanAmount").value);
       const interestType = document.getElementById("interestType").value;
       const annualRate = parseFloat(document.getElementById("annualRate").value);
       const R = annualRate / 1200;
@@ -143,44 +143,43 @@
       const disbursalDate = new Date(document.getElementById("disbursalDate").value);
       const firstEmiDate = new Date(document.getElementById("firstEmiDate").value);
 
-      let P = P_input;
       let advanceAmount = 0;
       let advanceEMICount = 0;
       let netTenure = grossTenure;
+      let netPrincipal = grossPrincipal;
 
-      let EMI;
+      // Step 1: Estimate EMI temporarily if advance EMI mode
+      let tempEMI;
+      if (interestType === "reducing") {
+        tempEMI = netPrincipal * R * Math.pow(1 + R, grossTenure) / (Math.pow(1 + R, grossTenure) - 1);
+      } else {
+        const flatInterest = (netPrincipal * (annualRate / 100) * grossTenure) / 12 / grossTenure;
+        tempEMI = (netPrincipal / grossTenure) + flatInterest;
+      }
 
       if (advType === "emi") {
         advanceEMICount = advValue;
+        advanceAmount = tempEMI * advanceEMICount;
         netTenure = grossTenure - advanceEMICount;
-      }
-
-      // Temporarily assume full principal to calculate EMI
-      if (interestType === "reducing") {
-        EMI = P * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
-      } else {
-        const flatInterest = (P * (annualRate / 100) * grossTenure) / 12 / grossTenure;
-        EMI = (P / grossTenure) + flatInterest;
-      }
-
-      if (advType === "emi") {
-        advanceAmount = EMI * advanceEMICount;
+        netPrincipal = grossPrincipal - advanceAmount;
       } else {
         advanceAmount = advValue;
-        P = P_input - advanceAmount;
+        netPrincipal = grossPrincipal - advanceAmount;
         netTenure = grossTenure;
-        // Recalculate EMI on reduced principal
-        if (interestType === "reducing") {
-          EMI = P * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
-        } else {
-          const flatInterest = (P * (annualRate / 100) * grossTenure) / 12 / grossTenure;
-          EMI = (P / grossTenure) + flatInterest;
-        }
+      }
+
+      // Step 2: Now calculate EMI on actual net disbursed principal
+      let EMI;
+      if (interestType === "reducing") {
+        EMI = netPrincipal * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
+      } else {
+        const flatInterest = (netPrincipal * (annualRate / 100) * grossTenure) / 12 / grossTenure;
+        EMI = (netPrincipal / grossTenure) + flatInterest;
       }
 
       const timeDiff = Math.abs(firstEmiDate - disbursalDate);
       const brokenPeriodDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-      const brokenInterest = (P * (annualRate / 100) * brokenPeriodDays) / 365;
+      const brokenInterest = (netPrincipal * (annualRate / 100) * brokenPeriodDays) / 365;
       const firstEMI = EMI + brokenInterest;
 
       const lastEmiDate = new Date(firstEmiDate);
@@ -188,9 +187,9 @@
 
       let html = `
         <h3>Loan Summary</h3>
-        <p><strong>Gross Loan Amount:</strong> ${formatCurrency(P_input)}</p>
+        <p><strong>Gross Loan Amount:</strong> ${formatCurrency(grossPrincipal)}</p>
         <p><strong>Advance Payment:</strong> ${formatCurrency(advanceAmount)} (${advType === 'emi' ? advanceEMICount + ' months' : 'fixed'})</p>
-        <p><strong>Net Disbursed Amount:</strong> ${formatCurrency(P_input - advanceAmount)}</p>
+        <p><strong>Net Disbursed Amount:</strong> ${formatCurrency(netPrincipal)}</p>
         <p><strong>Gross Tenure:</strong> ${grossTenure} months</p>
         <p><strong>Net Tenure:</strong> ${netTenure} months</p>
         <p><strong>First EMI Date:</strong> ${firstEmiDate.toDateString()}</p>
@@ -202,7 +201,7 @@
 
       document.getElementById("results").innerHTML = html;
 
-      let balance = P;
+      let balance = netPrincipal;
       let schedule = `
         <h3>Amortization Schedule</h3>
         <table id="amortTable">
@@ -216,8 +215,8 @@
           principal = EMI - interest;
           balance -= principal;
         } else {
-          interest = (P * (annualRate / 100)) / 12;
-          principal = P / grossTenure;
+          interest = (netPrincipal * (annualRate / 100)) / 12;
+          principal = netPrincipal / grossTenure;
           balance -= principal;
         }
 
