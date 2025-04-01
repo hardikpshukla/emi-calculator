@@ -1,245 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EMI Calculator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corrected EMI Calculator</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f7f7f7;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px;
-    }
-
-    .container {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 800px;
-    }
-
-    h2, h3 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0 5px;
-      font-weight: bold;
-    }
-
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-    }
-
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: right;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    .summary {
-      background-color: #e9f5ff;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-
-    .note {
-      font-size: 0.9rem;
-      color: #777;
-      margin-top: 10px;
-      text-align: center;
-    }
+    body { font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px; display: flex; justify-content: center; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+    input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
+    th { background-color: #f2f2f2; }
+    .summary { background-color: #e9f5ff; padding: 15px; border-radius: 10px; margin-top: 20px; }
+    .note { text-align: center; margin-top: 10px; font-size: 0.9rem; color: #777; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>EMI Calculator (with Broken Period Interest)</h2>
-
+    <h2>EMI Calculator (Corrected Logic)</h2>
     <label>Loan Amount (₹):</label>
-    <input type="number" id="loanAmount" />
-
+    <input type="number" id="loanAmount">
     <label>Interest Type:</label>
     <select id="interestType">
       <option value="reducing">Reducing</option>
       <option value="flat">Flat</option>
     </select>
-
     <label>Annual Interest Rate (%):</label>
-    <input type="number" id="annualRate" step="0.01" />
-
+    <input type="number" id="annualRate" step="0.01">
     <label>Gross Tenure (months):</label>
-    <input type="number" id="grossTenure" />
-
-    <label>Advance Payment Type:</label>
-    <select id="advType">
-      <option value="emi">Advance EMI Count</option>
-      <option value="fixed">Fixed Amount</option>
-    </select>
-
-    <label>Advance Payment (₹ or count):</label>
-    <input type="number" id="advanceValue" />
-
+    <input type="number" id="grossTenure">
+    <label>Advance EMI (count):</label>
+    <input type="number" id="advanceEMI">
     <label>Disbursal Date:</label>
-    <input type="date" id="disbursalDate" />
-
+    <input type="date" id="disbursalDate">
     <label>First EMI Date:</label>
-    <input type="date" id="firstEmiDate" />
-
+    <input type="date" id="firstEmiDate">
     <button onclick="calculateEMI()">Calculate</button>
-    <button onclick="downloadSchedule()">Download Schedule</button>
-
     <div id="results" class="summary"></div>
     <div id="schedule"></div>
     <div class="note">Note: The calculation is for illustration purposes only. Actual values may vary.</div>
   </div>
 
   <script>
-    function formatCurrency(value) {
-      return "₹" + value.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+    function formatINR(val) {
+      return "₹" + val.toLocaleString("en-IN", { minimumFractionDigits: 2 });
     }
 
     function calculateEMI() {
-      const grossPrincipal = parseFloat(document.getElementById("loanAmount").value);
-      const interestType = document.getElementById("interestType").value;
-      const annualRate = parseFloat(document.getElementById("annualRate").value);
-      const R = annualRate / 1200;
-      const grossTenure = parseInt(document.getElementById("grossTenure").value);
-      const advType = document.getElementById("advType").value;
-      const advValue = parseFloat(document.getElementById("advanceValue").value);
-      const disbursalDate = new Date(document.getElementById("disbursalDate").value);
-      const firstEmiDate = new Date(document.getElementById("firstEmiDate").value);
+      const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+      const interestType = document.getElementById('interestType').value;
+      const annualRate = parseFloat(document.getElementById('annualRate').value);
+      const grossTenure = parseInt(document.getElementById('grossTenure').value);
+      const advanceEMI = parseInt(document.getElementById('advanceEMI').value);
+      const disbursalDate = new Date(document.getElementById('disbursalDate').value);
+      const firstEmiDate = new Date(document.getElementById('firstEmiDate').value);
 
-      let advanceAmount = 0;
-      let advanceEMICount = 0;
-      let netTenure = grossTenure;
-      let netPrincipal = grossPrincipal;
+      const netTenure = grossTenure - advanceEMI;
+      const monthlyRate = annualRate / 1200;
 
-      // Step 1: Estimate EMI temporarily if advance EMI mode
-      let tempEMI;
-      if (interestType === "reducing") {
-        tempEMI = netPrincipal * R * Math.pow(1 + R, grossTenure) / (Math.pow(1 + R, grossTenure) - 1);
-      } else {
-        const flatInterest = (netPrincipal * (annualRate / 100) * grossTenure) / 12 / grossTenure;
-        tempEMI = (netPrincipal / grossTenure) + flatInterest;
-      }
+      // First, calculate EMI on full loan to get advance payment
+      let tempEMI = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, netTenure) / (Math.pow(1 + monthlyRate, netTenure) - 1);
+      let advancePayment = tempEMI * advanceEMI;
 
-      if (advType === "emi") {
-        advanceEMICount = advValue;
-        advanceAmount = tempEMI * advanceEMICount;
-        netTenure = grossTenure - advanceEMICount;
-        netPrincipal = grossPrincipal - advanceAmount;
-      } else {
-        advanceAmount = advValue;
-        netPrincipal = grossPrincipal - advanceAmount;
-        netTenure = grossTenure;
-      }
+      // Adjust loan for advance payment to get net disbursed
+      const netLoan = loanAmount - advancePayment;
 
-      // Step 2: Now calculate EMI on actual net disbursed principal
+      // Now recalculate EMI correctly on netLoan
       let EMI;
-      if (interestType === "reducing") {
-        EMI = netPrincipal * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
+      if (interestType === 'reducing') {
+        EMI = netLoan * monthlyRate * Math.pow(1 + monthlyRate, netTenure) / (Math.pow(1 + monthlyRate, netTenure) - 1);
       } else {
-        const flatInterest = (netPrincipal * (annualRate / 100) * grossTenure) / 12 / grossTenure;
-        EMI = (netPrincipal / grossTenure) + flatInterest;
+        let flatInterest = (netLoan * (annualRate / 100) * grossTenure) / 12;
+        EMI = (netLoan + flatInterest) / grossTenure;
       }
 
-      const timeDiff = Math.abs(firstEmiDate - disbursalDate);
-      const brokenPeriodDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-      const brokenInterest = (netPrincipal * (annualRate / 100) * brokenPeriodDays) / 365;
+      // Broken period interest
+      const diffDays = Math.ceil((firstEmiDate - disbursalDate) / (1000 * 60 * 60 * 24));
+      const brokenInterest = (netLoan * (annualRate / 100) * diffDays) / 365;
       const firstEMI = EMI + brokenInterest;
 
       const lastEmiDate = new Date(firstEmiDate);
       lastEmiDate.setMonth(lastEmiDate.getMonth() + netTenure - 1);
 
-      let html = `
+      let summary = `
         <h3>Loan Summary</h3>
-        <p><strong>Gross Loan Amount:</strong> ${formatCurrency(grossPrincipal)}</p>
-        <p><strong>Advance Payment:</strong> ${formatCurrency(advanceAmount)} (${advType === 'emi' ? advanceEMICount + ' months' : 'fixed'})</p>
-        <p><strong>Net Disbursed Amount:</strong> ${formatCurrency(netPrincipal)}</p>
-        <p><strong>Gross Tenure:</strong> ${grossTenure} months</p>
-        <p><strong>Net Tenure:</strong> ${netTenure} months</p>
+        <p><strong>Gross Loan Amount:</strong> ${formatINR(loanAmount)}</p>
+        <p><strong>Advance EMI Count:</strong> ${advanceEMI}</p>
+        <p><strong>Advance EMI Value:</strong> ${formatINR(advancePayment)}</p>
+        <p><strong>Net Disbursed Amount:</strong> ${formatINR(netLoan)}</p>
+        <p><strong>EMI (Regular):</strong> ${formatINR(EMI)}</p>
+        <p><strong>Broken Period Interest:</strong> ${formatINR(brokenInterest)}</p>
+        <p><strong>First EMI:</strong> ${formatINR(firstEMI)}</p>
         <p><strong>First EMI Date:</strong> ${firstEmiDate.toDateString()}</p>
         <p><strong>Last EMI Date:</strong> ${lastEmiDate.toDateString()}</p>
-        <p><strong>Regular EMI:</strong> ${formatCurrency(EMI)}</p>
-        <p><strong>Broken Period Interest:</strong> ${formatCurrency(brokenInterest)}</p>
-        <p><strong>First EMI (with Broken Interest):</strong> ${formatCurrency(firstEMI)}</p>
       `;
+      document.getElementById('results').innerHTML = summary;
 
-      document.getElementById("results").innerHTML = html;
-
-      let balance = netPrincipal;
-      let schedule = `
-        <h3>Amortization Schedule</h3>
-        <table id="amortTable">
-          <tr><th>Month</th><th>Principal</th><th>Interest</th><th>EMI</th><th>Balance</th></tr>
-      `;
-
+      let balance = netLoan;
+      let table = `<h3>Amortization Schedule</h3><table><tr><th>Month</th><th>Principal</th><th>Interest</th><th>EMI</th><th>Balance</th></tr>`;
       for (let i = 0; i < netTenure; i++) {
-        let interest, principal;
-        if (interestType === "reducing") {
-          interest = balance * R;
-          principal = EMI - interest;
-          balance -= principal;
-        } else {
-          interest = (netPrincipal * (annualRate / 100)) / 12;
-          principal = netPrincipal / grossTenure;
-          balance -= principal;
-        }
-
-        schedule += `<tr><td>${i + 1}</td><td>${principal.toFixed(2)}</td><td>${interest.toFixed(2)}</td><td>${EMI.toFixed(2)}</td><td>${Math.max(0, balance.toFixed(2))}</td></tr>`;
+        let interest = interestType === 'reducing' ? balance * monthlyRate : (netLoan * (annualRate / 100)) / 12;
+        let principal = EMI - interest;
+        balance -= principal;
+        table += `<tr><td>${i + 1}</td><td>${principal.toFixed(2)}</td><td>${interest.toFixed(2)}</td><td>${EMI.toFixed(2)}</td><td>${Math.max(0, balance).toFixed(2)}</td></tr>`;
       }
-
-      schedule += `</table>`;
-      document.getElementById("schedule").innerHTML = schedule;
-    }
-
-    function downloadSchedule() {
-      const table = document.getElementById("amortTable");
-      if (!table) return alert("Please calculate first.");
-      let csv = "Month,Principal,Interest,EMI,Balance\n";
-      [...table.rows].slice(1).forEach(row => {
-        const cols = [...row.cells].map(td => td.textContent.trim());
-        csv += cols.join(",") + "\n";
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "AmortizationSchedule.csv";
-      link.click();
+      table += `</table>`;
+      document.getElementById('schedule').innerHTML = table;
     }
   </script>
 </body>
