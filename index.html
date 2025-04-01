@@ -76,6 +76,13 @@
       border-radius: 10px;
       margin-top: 20px;
     }
+
+    .note {
+      font-size: 0.9rem;
+      color: #777;
+      margin-top: 10px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -107,9 +114,11 @@
     <input type="date" id="firstEmiDate" />
 
     <button onclick="calculateEMI()">Calculate</button>
+    <button onclick="downloadSchedule()">Download Schedule</button>
 
     <div id="results" class="summary"></div>
     <div id="schedule"></div>
+    <div class="note">Note: The table is for illustration purposes only and may differ from actual.</div>
   </div>
 
   <script>
@@ -139,6 +148,7 @@
       const firstEMI = EMI + brokenInterest;
       const lastEmiDate = new Date(firstEmiDate);
       lastEmiDate.setMonth(lastEmiDate.getMonth() + netTenure - 1);
+      const netDisbursed = P - (EMI * advanceEMI);
 
       let html = `
         <h3>Loan Summary</h3>
@@ -147,6 +157,8 @@
         <p><strong>Broken Period Interest:</strong> ₹${brokenInterest.toFixed(2)}</p>
         <p><strong>Regular EMI:</strong> ₹${EMI.toFixed(2)}</p>
         <p><strong>First EMI (with Broken Interest):</strong> ₹${firstEMI.toFixed(2)}</p>
+        <p><strong>Advance EMIs Paid:</strong> ${advanceEMI} × ₹${EMI.toFixed(2)}</p>
+        <p><strong>Net Disbursed Amount:</strong> ₹${netDisbursed.toFixed(2)}</p>
         <p><strong>Last EMI Date:</strong> ${lastEmiDate.toDateString()}</p>
       `;
       document.getElementById("results").innerHTML = html;
@@ -154,7 +166,7 @@
       let balance = P;
       let schedule = `
         <h3>Amortization Schedule</h3>
-        <table>
+        <table id="amortTable">
           <tr><th>Month</th><th>Principal</th><th>Interest</th><th>EMI</th><th>Balance</th></tr>
       `;
 
@@ -175,6 +187,21 @@
 
       schedule += `</table>`;
       document.getElementById("schedule").innerHTML = schedule;
+    }
+
+    function downloadSchedule() {
+      const table = document.getElementById("amortTable");
+      if (!table) return alert("Please calculate first.");
+      let csv = "Month,Principal,Interest,EMI,Balance\n";
+      [...table.rows].slice(1).forEach(row => {
+        const cols = [...row.cells].map(td => td.textContent.trim());
+        csv += cols.join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "AmortizationSchedule.csv";
+      link.click();
     }
   </script>
 </body>
