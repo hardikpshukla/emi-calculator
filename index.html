@@ -3,40 +3,150 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Corrected EMI Calculator</title>
+  <title>EMI Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px; display: flex; justify-content: center; }
-    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-    input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
-    th { background-color: #f2f2f2; }
-    .summary { background-color: #e9f5ff; padding: 15px; border-radius: 10px; margin-top: 20px; }
-    .note { text-align: center; margin-top: 10px; font-size: 0.9rem; color: #777; }
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #e9f5ff;
+      --text-color: #333;
+      --bg-color: #f7f7f7;
+      --border-radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem;
+    }
+
+    .container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: var(--primary-color);
+    }
+
+    label {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      margin-top: 1rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .summary {
+      background-color: var(--secondary-color);
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      margin-top: 1.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.75rem;
+      text-align: right;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .note {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #777;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      .container {
+        padding: 1rem;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th, td {
+        text-align: left;
+        padding: 0.5rem;
+      }
+      th {
+        background-color: transparent;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>EMI Calculator (Corrected Logic)</h2>
-    <label>Loan Amount (₹):</label>
+    <h2>EMI Calculator</h2>
+    <label for="loanAmount">Loan Amount (₹):</label>
     <input type="number" id="loanAmount">
-    <label>Interest Type:</label>
+
+    <label for="interestType">Interest Type:</label>
     <select id="interestType">
       <option value="reducing">Reducing</option>
       <option value="flat">Flat</option>
     </select>
-    <label>Annual Interest Rate (%):</label>
+
+    <label for="annualRate">Annual Interest Rate (%):</label>
     <input type="number" id="annualRate" step="0.01">
-    <label>Gross Tenure (months):</label>
+
+    <label for="grossTenure">Gross Tenure (months):</label>
     <input type="number" id="grossTenure">
-    <label>Advance EMI (count):</label>
+
+    <label for="advanceEMI">Advance EMI (count):</label>
     <input type="number" id="advanceEMI">
-    <label>Disbursal Date:</label>
+
+    <label for="disbursalDate">Disbursal Date:</label>
     <input type="date" id="disbursalDate">
-    <label>First EMI Date:</label>
+
+    <label for="firstEmiDate">First EMI Date:</label>
     <input type="date" id="firstEmiDate">
+
     <button onclick="calculateEMI()">Calculate</button>
     <div id="results" class="summary"></div>
     <div id="schedule"></div>
@@ -60,14 +170,10 @@
       const netTenure = grossTenure - advanceEMI;
       const monthlyRate = annualRate / 1200;
 
-      // First, calculate EMI on full loan to get advance payment
       let tempEMI = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, netTenure) / (Math.pow(1 + monthlyRate, netTenure) - 1);
       let advancePayment = tempEMI * advanceEMI;
-
-      // Adjust loan for advance payment to get net disbursed
       const netLoan = loanAmount - advancePayment;
 
-      // Now recalculate EMI correctly on netLoan
       let EMI;
       if (interestType === 'reducing') {
         EMI = netLoan * monthlyRate * Math.pow(1 + monthlyRate, netTenure) / (Math.pow(1 + monthlyRate, netTenure) - 1);
@@ -76,7 +182,6 @@
         EMI = (netLoan + flatInterest) / grossTenure;
       }
 
-      // Broken period interest
       const diffDays = Math.ceil((firstEmiDate - disbursalDate) / (1000 * 60 * 60 * 24));
       const brokenInterest = (netLoan * (annualRate / 100) * diffDays) / 365;
       const firstEMI = EMI + brokenInterest;
