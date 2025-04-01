@@ -104,8 +104,14 @@
     <label>Gross Tenure (months):</label>
     <input type="number" id="grossTenure" />
 
-    <label>Advance EMI (count):</label>
-    <input type="number" id="advanceEMI" />
+    <label>Advance Payment Type:</label>
+    <select id="advType">
+      <option value="emi">Advance EMI Count</option>
+      <option value="fixed">Fixed Amount</option>
+    </select>
+
+    <label>Advance Payment (₹ or count):</label>
+    <input type="number" id="advanceValue" />
 
     <label>Disbursal Date:</label>
     <input type="date" id="disbursalDate" />
@@ -118,26 +124,38 @@
 
     <div id="results" class="summary"></div>
     <div id="schedule"></div>
-    <div class="note">Note: The table is for illustration purposes only and may differ from actual.</div>
+    <div class="note">Note: The calculation is for illustration purposes only. Actual values may vary.</div>
   </div>
 
   <script>
+    function formatCurrency(value) {
+      return "₹" + value.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+    }
+
     function calculateEMI() {
-      const P = parseFloat(document.getElementById("loanAmount").value);
+      const P_input = parseFloat(document.getElementById("loanAmount").value);
       const interestType = document.getElementById("interestType").value;
       const annualRate = parseFloat(document.getElementById("annualRate").value);
       const R = annualRate / 1200;
       const grossTenure = parseInt(document.getElementById("grossTenure").value);
-      const advanceEMI = parseInt(document.getElementById("advanceEMI").value);
+      const advType = document.getElementById("advType").value;
+      const advValue = parseFloat(document.getElementById("advanceValue").value);
       const disbursalDate = new Date(document.getElementById("disbursalDate").value);
       const firstEmiDate = new Date(document.getElementById("firstEmiDate").value);
-      const netTenure = grossTenure - advanceEMI;
 
-      const timeDiff = Math.abs(firstEmiDate - disbursalDate);
-      const brokenPeriodDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-      const brokenInterest = (P * (annualRate / 100) * brokenPeriodDays) / 365;
+      let P = P_input;
+      let advanceAmount = 0;
+      let advanceEMICount = 0;
+      let netTenure = grossTenure;
 
       let EMI;
+
+      if (advType === "emi") {
+        advanceEMICount = advValue;
+        netTenure = grossTenure - advanceEMICount;
+      }
+
+      // Temporarily assume full principal to calculate EMI
       if (interestType === "reducing") {
         EMI = P * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
       } else {
@@ -145,22 +163,43 @@
         EMI = (P / grossTenure) + flatInterest;
       }
 
+      if (advType === "emi") {
+        advanceAmount = EMI * advanceEMICount;
+      } else {
+        advanceAmount = advValue;
+        P = P_input - advanceAmount;
+        netTenure = grossTenure;
+        // Recalculate EMI on reduced principal
+        if (interestType === "reducing") {
+          EMI = P * R * Math.pow(1 + R, netTenure) / (Math.pow(1 + R, netTenure) - 1);
+        } else {
+          const flatInterest = (P * (annualRate / 100) * grossTenure) / 12 / grossTenure;
+          EMI = (P / grossTenure) + flatInterest;
+        }
+      }
+
+      const timeDiff = Math.abs(firstEmiDate - disbursalDate);
+      const brokenPeriodDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      const brokenInterest = (P * (annualRate / 100) * brokenPeriodDays) / 365;
       const firstEMI = EMI + brokenInterest;
+
       const lastEmiDate = new Date(firstEmiDate);
       lastEmiDate.setMonth(lastEmiDate.getMonth() + netTenure - 1);
-      const netDisbursed = P - (EMI * advanceEMI);
 
       let html = `
         <h3>Loan Summary</h3>
-        <p><strong>Interest Type:</strong> ${interestType}</p>
+        <p><strong>Gross Loan Amount:</strong> ${formatCurrency(P_input)}</p>
+        <p><strong>Advance Payment:</strong> ${formatCurrency(advanceAmount)} (${advType === 'emi' ? advanceEMICount + ' months' : 'fixed'})</p>
+        <p><strong>Net Disbursed Amount:</strong> ${formatCurrency(P_input - advanceAmount)}</p>
+        <p><strong>Gross Tenure:</strong> ${grossTenure} months</p>
         <p><strong>Net Tenure:</strong> ${netTenure} months</p>
-        <p><strong>Broken Period Interest:</strong> ₹${brokenInterest.toFixed(2)}</p>
-        <p><strong>Regular EMI:</strong> ₹${EMI.toFixed(2)}</p>
-        <p><strong>First EMI (with Broken Interest):</strong> ₹${firstEMI.toFixed(2)}</p>
-        <p><strong>Advance EMIs Paid:</strong> ${advanceEMI} × ₹${EMI.toFixed(2)}</p>
-        <p><strong>Net Disbursed Amount:</strong> ₹${netDisbursed.toFixed(2)}</p>
+        <p><strong>First EMI Date:</strong> ${firstEmiDate.toDateString()}</p>
         <p><strong>Last EMI Date:</strong> ${lastEmiDate.toDateString()}</p>
+        <p><strong>Regular EMI:</strong> ${formatCurrency(EMI)}</p>
+        <p><strong>Broken Period Interest:</strong> ${formatCurrency(brokenInterest)}</p>
+        <p><strong>First EMI (with Broken Interest):</strong> ${formatCurrency(firstEMI)}</p>
       `;
+
       document.getElementById("results").innerHTML = html;
 
       let balance = P;
