@@ -33,7 +33,7 @@
       background: #fff;
       padding: 2rem;
       border-radius: var(--border-radius);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       width: 100%;
       max-width: 900px;
       display: flex;
@@ -138,7 +138,13 @@
     <label for="grossTenure">Gross Tenure (months):</label>
     <input type="number" id="grossTenure">
 
-    <label for="advanceEMI">Advance EMI (count):</label>
+    <label for="advanceOption">Advance Payment Type:</label>
+    <select id="advanceOption" onchange="toggleAdvanceInput()">
+      <option value="months">Advance EMI in Months</option>
+      <option value="amount">Advance Payment in ₹</option>
+    </select>
+
+    <label id="advanceLabel" for="advanceEMI">Advance EMI (count):</label>
     <input type="number" id="advanceEMI">
 
     <label for="disbursalDate">Disbursal Date:</label>
@@ -158,21 +164,35 @@
       return "₹" + val.toLocaleString("en-IN", { minimumFractionDigits: 2 });
     }
 
+    function toggleAdvanceInput() {
+      const option = document.getElementById('advanceOption').value;
+      document.getElementById('advanceLabel').textContent = option === 'months' ? 'Advance EMI (count):' : 'Advance Payment (₹):';
+    }
+
     function calculateEMI() {
       const loanAmount = parseFloat(document.getElementById('loanAmount').value);
       const interestType = document.getElementById('interestType').value;
       const annualRate = parseFloat(document.getElementById('annualRate').value);
       const grossTenure = parseInt(document.getElementById('grossTenure').value);
-      const advanceEMI = parseInt(document.getElementById('advanceEMI').value);
+      const advanceType = document.getElementById('advanceOption').value;
+      const advanceInput = parseFloat(document.getElementById('advanceEMI').value);
       const disbursalDate = new Date(document.getElementById('disbursalDate').value);
       const firstEmiDate = new Date(document.getElementById('firstEmiDate').value);
 
-      const netTenure = grossTenure - advanceEMI;
       const monthlyRate = annualRate / 1200;
+      let advancePayment = 0;
+      let netLoan = loanAmount;
+      let netTenure = grossTenure;
 
-      let tempEMI = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, netTenure) / (Math.pow(1 + monthlyRate, netTenure) - 1);
-      let advancePayment = tempEMI * advanceEMI;
-      const netLoan = loanAmount - advancePayment;
+      if (advanceType === 'months') {
+        let tempEMI = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, grossTenure - advanceInput) / (Math.pow(1 + monthlyRate, grossTenure - advanceInput) - 1);
+        advancePayment = tempEMI * advanceInput;
+        netLoan = loanAmount - advancePayment;
+        netTenure = grossTenure - advanceInput;
+      } else {
+        advancePayment = advanceInput;
+        netLoan = loanAmount - advancePayment;
+      }
 
       let EMI;
       if (interestType === 'reducing') {
@@ -192,8 +212,7 @@
       let summary = `
         <h3>Loan Summary</h3>
         <p><strong>Gross Loan Amount:</strong> ${formatINR(loanAmount)}</p>
-        <p><strong>Advance EMI Count:</strong> ${advanceEMI}</p>
-        <p><strong>Advance EMI Value:</strong> ${formatINR(advancePayment)}</p>
+        <p><strong>Advance Payment:</strong> ${formatINR(advancePayment)}</p>
         <p><strong>Net Disbursed Amount:</strong> ${formatINR(netLoan)}</p>
         <p><strong>EMI (Regular):</strong> ${formatINR(EMI)}</p>
         <p><strong>Broken Period Interest:</strong> ${formatINR(brokenInterest)}</p>
